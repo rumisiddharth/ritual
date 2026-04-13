@@ -1,7 +1,7 @@
 import { useState } from "react";
 
-const API = "";
-
+const API =
+  process.env.REACT_APP_API_URL || "https://ritual-backend-giri.onrender.com";
 // ── helpers ──────────────────────────────────────────────────────────────────
 function PasswordStrength({ password }) {
   if (!password) return null;

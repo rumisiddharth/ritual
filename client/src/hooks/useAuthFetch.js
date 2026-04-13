@@ -20,7 +20,9 @@ export function useAuthFetch(token, onUnauthorized) {
   onUnauthorizedRef.current = onUnauthorized;
 
   const authFetch = useCallback(async (url, options = {}) => {
-    const BASE = process.env.REACT_APP_API_URL || "";
+    const BASE =
+      process.env.REACT_APP_API_URL ||
+      "https://ritual-backend-giri.onrender.com";
     const response = await fetch(`${BASE}${url}`, {
       ...options,
       headers: {
