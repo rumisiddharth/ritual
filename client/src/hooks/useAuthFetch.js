@@ -20,7 +20,8 @@ export function useAuthFetch(token, onUnauthorized) {
   onUnauthorizedRef.current = onUnauthorized;
 
   const authFetch = useCallback(async (url, options = {}) => {
-    const response = await fetch(url, {
+    const BASE = process.env.REACT_APP_API_URL || "";
+    const response = await fetch(`${BASE}${url}`, {
       ...options,
       headers: {
         "Content-Type": "application/json",
