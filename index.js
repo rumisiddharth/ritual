@@ -28,6 +28,7 @@ const pomodoroRoutes = require("./routes/pomodoro"); // ← NEW
 
 // ─── App ──────────────────────────────────────────────────────────────────────
 const app = express();
+app.set("trust proxy", 1);
 
 app.use(helmet());
 app.use(pino({ level: process.env.LOG_LEVEL || "info" }));
