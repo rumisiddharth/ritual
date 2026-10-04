@@ -4,3 +4,4 @@ client/build/
 .env
 .env.local
 *.log
+*.odt
