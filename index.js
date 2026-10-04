@@ -1,5 +1,4 @@
 require("dotenv").config();
-const path = require("path");
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
@@ -7,12 +6,16 @@ const pino = require("pino-http");
 const rateLimit = require("express-rate-limit");
 
 // ─── Startup env validation ───────────────────────────────────────────────────
-const REQUIRED_ENV = ["JWT_SECRET", "CLIENT_ORIGIN", "DB_PASSWORD"];
+const REQUIRED_ENV = ["JWT_SECRET", "CLIENT_ORIGIN", "DATABASE_URL"];
 const missing = REQUIRED_ENV.filter((k) => !process.env[k]);
 if (missing.length > 0) {
   console.error(
     `FATAL: Missing required environment variables: ${missing.join(", ")}`,
   );
+  process.exit(1);
+}
+if (process.env.JWT_SECRET.length < 32) {
+  console.error("FATAL: JWT_SECRET must be at least 32 characters");
   process.exit(1);
 }
 
@@ -24,7 +27,7 @@ const authRoutes = require("./routes/auth");
 const habitRoutes = require("./routes/habits");
 const completionRoutes = require("./routes/completions");
 const analyticsRoutes = require("./routes/analytics");
-const pomodoroRoutes = require("./routes/pomodoro"); // ← NEW
+const pomodoroRoutes = require("./routes/pomodoro");
 
 // ─── App ──────────────────────────────────────────────────────────────────────
 const app = express();
@@ -32,7 +35,7 @@ app.set("trust proxy", 1);
 
 app.use(helmet());
 app.use(pino({ level: process.env.LOG_LEVEL || "info" }));
-app.use(express.json({ limit: "2mb" }));
+app.use(express.json({ limit: "100kb" }));
 app.use(cors({ origin: process.env.CLIENT_ORIGIN }));
 
 // ─── Rate limiters ────────────────────────────────────────────────────────────
@@ -67,7 +70,6 @@ app.use(
   }),
 );
 app.use(
-  // ← NEW
   "/api/pomodoro",
   rateLimit({
     windowMs: 60 * 1000,
@@ -116,12 +118,15 @@ app.use("/auth", authRoutes);
 app.use("/habits", habitRoutes);
 app.use("/completions", completionRoutes);
 app.use("/", analyticsRoutes); // /habit-dna, /correlations, /correlations/refresh
-app.use("/api/pomodoro", pomodoroRoutes); // ← NEW — must come before the static/catch-all below
+app.use("/api/pomodoro", pomodoroRoutes);
 
-// ─── Serve React build (production) ──────────────────────────────────────────
-app.use(express.static(path.join(__dirname, "client/build")));
-app.use((_req, res) => {
-  res.sendFile(path.join(__dirname, "client/build", "index.html"));
+// ─── Fallbacks ────────────────────────────────────────────────────────────────
+app.use((_req, res) => res.status(404).json({ error: "Not found" }));
+
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, _next) => {
+  req.log.error(err);
+  res.status(500).json({ error: "Internal server error" });
 });
 
 // ─── Start ────────────────────────────────────────────────────────────────────
