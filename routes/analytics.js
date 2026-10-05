@@ -215,6 +215,7 @@ router.post("/correlations/refresh", authenticateToken, async (req, res) => {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
+    refreshCooldowns.delete(req.user.id);
     req.log.error(error, "POST /correlations/refresh failed");
     res.status(500).json({ error: "Refresh failed" });
   }
